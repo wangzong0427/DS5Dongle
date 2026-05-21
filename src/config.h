@@ -17,6 +17,15 @@ struct __attribute__((packed)) Config_body {
     uint8_t polling_rate_mode; // 0: 250Hz, 1: 500Hz, 2: real-time
     uint8_t audio_buffer_length; // [16,128]
     uint8_t controller_mode; // 0: DS5, 1: DSE, 2: Auto
+    uint8_t gyro_aim_enabled; // bool
+    float gyro_aim_sens_x; // yaw -> right stick X
+    float gyro_aim_sens_y; // pitch -> right stick Y
+    uint8_t gyro_aim_deadzone; // gyro raw value deadzone
+    uint8_t gyro_aim_smoothing; // [0,100]
+    uint8_t gyro_aim_max_output; // [1,127]
+    uint8_t gyro_aim_l2_threshold; // [0,255]
+    uint8_t gyro_aim_invert_x; // bool
+    uint8_t gyro_aim_invert_y; // bool
 };
 
 struct __attribute__((packed)) Config {

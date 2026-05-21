@@ -88,6 +88,7 @@ add_executable(ds5-bridge
         src/config.cpp
         src/cmd.cpp
         src/state_mgr.cpp
+        src/gyro_aim.cpp
 )
 
 if (ENABLE_BATT_LED)
@@ -178,4 +179,3 @@ target_link_libraries(ds5-bridge
 )
 
 pico_add_extra_outputs(ds5-bridge)
-

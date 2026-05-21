@@ -13,7 +13,7 @@
 #include "pico/cyw43_arch.h"
 
 constexpr uint32_t CONFIG_MAGIC = 0x66ccff00;
-constexpr uint16_t CONFIG_VERSION = 1;
+constexpr uint16_t CONFIG_VERSION = 2;
 constexpr uint32_t CONFIG_FLASH_OFFSET = PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE;
 static Config config{};
 bool is_dse = false;
@@ -26,6 +26,18 @@ static_assert(CONFIG_FLASH_OFFSET % FLASH_SECTOR_SIZE == 0);
 
 uint32_t calc_config_crc(const Config &con) {
     return crc32(reinterpret_cast<const uint8_t *>(&con.body), sizeof(Config_body));
+}
+
+void gyro_aim_defaults(Config_body *body) {
+    body->gyro_aim_enabled = 0;
+    body->gyro_aim_sens_x = 0.01f;
+    body->gyro_aim_sens_y = 0.01f;
+    body->gyro_aim_deadzone = 10;
+    body->gyro_aim_smoothing = 20;
+    body->gyro_aim_max_output = 40;
+    body->gyro_aim_l2_threshold = 30;
+    body->gyro_aim_invert_x = 0;
+    body->gyro_aim_invert_y = 0;
 }
 
 const Config *flash_config() {
@@ -47,6 +59,10 @@ void config_valid() {
         printf("[Config] Config Body size is invalid\n");
     }
     auto body = &config.body;
+    const bool body_version_changed = body->config_version != CONFIG_VERSION;
+    if (body_version_changed) {
+        gyro_aim_defaults(body);
+    }
     if (std::isnan(body->haptics_gain) || body->haptics_gain < 1.0f || body->haptics_gain > 2.0f) {
         body->haptics_gain = 1.0f;
         printf("[Config] Haptics Gain value is invalid\n");
@@ -79,7 +95,35 @@ void config_valid() {
         body->controller_mode = 2;
         printf("[Config] controller_mode is invalid\n");
     }
-    if (body->config_version != CONFIG_VERSION) {
+    if (body->gyro_aim_enabled > 1) {
+        body->gyro_aim_enabled = 0;
+        printf("[Config] gyro_aim_enabled is invalid\n");
+    }
+    if (std::isnan(body->gyro_aim_sens_x) || body->gyro_aim_sens_x < 0.0f || body->gyro_aim_sens_x > 1.0f) {
+        body->gyro_aim_sens_x = 0.01f;
+        printf("[Config] gyro_aim_sens_x is invalid\n");
+    }
+    if (std::isnan(body->gyro_aim_sens_y) || body->gyro_aim_sens_y < 0.0f || body->gyro_aim_sens_y > 1.0f) {
+        body->gyro_aim_sens_y = 0.01f;
+        printf("[Config] gyro_aim_sens_y is invalid\n");
+    }
+    if (body->gyro_aim_smoothing > 100) {
+        body->gyro_aim_smoothing = 20;
+        printf("[Config] gyro_aim_smoothing is invalid\n");
+    }
+    if (body->gyro_aim_max_output == 0 || body->gyro_aim_max_output > 127) {
+        body->gyro_aim_max_output = 40;
+        printf("[Config] gyro_aim_max_output is invalid\n");
+    }
+    if (body->gyro_aim_invert_x > 1) {
+        body->gyro_aim_invert_x = 0;
+        printf("[Config] gyro_aim_invert_x is invalid\n");
+    }
+    if (body->gyro_aim_invert_y > 1) {
+        body->gyro_aim_invert_y = 0;
+        printf("[Config] gyro_aim_invert_y is invalid\n");
+    }
+    if (body_version_changed) {
         body->config_version = CONFIG_VERSION;
         printf("[Config] Warning: Config may breaking change\n");
     }

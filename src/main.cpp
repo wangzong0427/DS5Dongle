@@ -13,6 +13,7 @@
 #include "hardware/watchdog.h"
 #include "pico/cyw43_arch.h"
 #include "state_mgr.h"
+#include "gyro_aim.h"
 #if ENABLE_SERIAL
 #include "pico/stdio_usb.h"
 #endif
@@ -88,8 +89,12 @@ void on_bt_data(CHANNEL_TYPE channel, uint8_t *data, uint16_t len) {
             set_headset(data[56] & 1);
         }
 
+        uint8_t processed_report[63];
+        memcpy(processed_report, data + 3, sizeof(processed_report));
+        gyro_aim_process_report(processed_report, sizeof(processed_report));
+
         if (get_config().polling_rate_mode != 2) {
-            memcpy(interrupt_in_data, data + 3, 63);
+            memcpy(interrupt_in_data, processed_report, sizeof(processed_report));
 #if ENABLE_BATT_LED
             battery_led_note_report();
 #endif
@@ -103,7 +108,7 @@ void on_bt_data(CHANNEL_TYPE channel, uint8_t *data, uint16_t len) {
         // We also set the report_dirty flag to true to indicate that new data is available
         //  and needs to be sent in the next interrupt report.
         critical_section_enter_blocking(&report_cs);
-        memcpy(interrupt_in_data, data + 3, 63);
+        memcpy(interrupt_in_data, processed_report, sizeof(processed_report));
         report_dirty = true;
         critical_section_exit(&report_cs);
 #if ENABLE_BATT_LED
