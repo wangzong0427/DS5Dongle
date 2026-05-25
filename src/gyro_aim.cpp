@@ -34,10 +34,6 @@ float smooth_axis(const float previous, const float current, const uint8_t smoot
     return previous * keep + current * (1.0f - keep);
 }
 
-int clamp_stick_byte(const int value) {
-    return std::clamp(value, 0, 255);
-}
-
 void reset_filter() {
     filtered_x = 0.0f;
     filtered_y = 0.0f;
@@ -73,10 +69,10 @@ void gyro_aim_process_report(uint8_t *report, const uint16_t len) {
     filtered_x = smooth_axis(filtered_x, offset_x, config.gyro_aim_smoothing);
     filtered_y = smooth_axis(filtered_y, offset_y, config.gyro_aim_smoothing);
 
-    const int max_output = std::clamp(static_cast<int>(config.gyro_aim_max_output), 1, 127);
+    const int max_output = static_cast<int>(config.gyro_aim_max_output);
     const int stick_offset_x = std::clamp(static_cast<int>(std::lround(filtered_x)), -max_output, max_output);
     const int stick_offset_y = std::clamp(static_cast<int>(std::lround(filtered_y)), -max_output, max_output);
 
-    report[RIGHT_STICK_X_OFFSET] = static_cast<uint8_t>(clamp_stick_byte(report[RIGHT_STICK_X_OFFSET] + stick_offset_x));
-    report[RIGHT_STICK_Y_OFFSET] = static_cast<uint8_t>(clamp_stick_byte(report[RIGHT_STICK_Y_OFFSET] + stick_offset_y));
+    report[RIGHT_STICK_X_OFFSET] = static_cast<uint8_t>(std::clamp(report[RIGHT_STICK_X_OFFSET] + stick_offset_x, 0, 255));
+    report[RIGHT_STICK_Y_OFFSET] = static_cast<uint8_t>(std::clamp(report[RIGHT_STICK_Y_OFFSET] + stick_offset_y, 0, 255));
 }

@@ -15,6 +15,15 @@
 constexpr uint32_t CONFIG_MAGIC = 0x66ccff00;
 constexpr uint16_t CONFIG_VERSION = 2;
 constexpr uint32_t CONFIG_FLASH_OFFSET = PICO_FLASH_SIZE_BYTES - FLASH_SECTOR_SIZE;
+
+constexpr uint8_t GYRO_AIM_ENABLED_DEFAULT = 0;
+constexpr float GYRO_AIM_SENS_DEFAULT = 0.01f;
+constexpr uint8_t GYRO_AIM_DEADZONE_DEFAULT = 10;
+constexpr uint8_t GYRO_AIM_SMOOTHING_DEFAULT = 20;
+constexpr uint8_t GYRO_AIM_MAX_OUTPUT_DEFAULT = 40;
+constexpr uint8_t GYRO_AIM_L2_THRESHOLD_DEFAULT = 30;
+constexpr uint8_t GYRO_AIM_INVERT_DEFAULT = 0;
+
 static Config config{};
 bool is_dse = false;
 
@@ -28,16 +37,16 @@ uint32_t calc_config_crc(const Config &con) {
     return crc32(reinterpret_cast<const uint8_t *>(&con.body), sizeof(Config_body));
 }
 
-void gyro_aim_defaults(Config_body *body) {
-    body->gyro_aim_enabled = 0;
-    body->gyro_aim_sens_x = 0.01f;
-    body->gyro_aim_sens_y = 0.01f;
-    body->gyro_aim_deadzone = 10;
-    body->gyro_aim_smoothing = 20;
-    body->gyro_aim_max_output = 40;
-    body->gyro_aim_l2_threshold = 30;
-    body->gyro_aim_invert_x = 0;
-    body->gyro_aim_invert_y = 0;
+static void gyro_aim_defaults(Config_body *body) {
+    body->gyro_aim_enabled = GYRO_AIM_ENABLED_DEFAULT;
+    body->gyro_aim_sens_x = GYRO_AIM_SENS_DEFAULT;
+    body->gyro_aim_sens_y = GYRO_AIM_SENS_DEFAULT;
+    body->gyro_aim_deadzone = GYRO_AIM_DEADZONE_DEFAULT;
+    body->gyro_aim_smoothing = GYRO_AIM_SMOOTHING_DEFAULT;
+    body->gyro_aim_max_output = GYRO_AIM_MAX_OUTPUT_DEFAULT;
+    body->gyro_aim_l2_threshold = GYRO_AIM_L2_THRESHOLD_DEFAULT;
+    body->gyro_aim_invert_x = GYRO_AIM_INVERT_DEFAULT;
+    body->gyro_aim_invert_y = GYRO_AIM_INVERT_DEFAULT;
 }
 
 const Config *flash_config() {
@@ -96,31 +105,31 @@ void config_valid() {
         printf("[Config] controller_mode is invalid\n");
     }
     if (body->gyro_aim_enabled > 1) {
-        body->gyro_aim_enabled = 0;
+        body->gyro_aim_enabled = GYRO_AIM_ENABLED_DEFAULT;
         printf("[Config] gyro_aim_enabled is invalid\n");
     }
     if (std::isnan(body->gyro_aim_sens_x) || body->gyro_aim_sens_x < 0.0f || body->gyro_aim_sens_x > 1.0f) {
-        body->gyro_aim_sens_x = 0.01f;
+        body->gyro_aim_sens_x = GYRO_AIM_SENS_DEFAULT;
         printf("[Config] gyro_aim_sens_x is invalid\n");
     }
     if (std::isnan(body->gyro_aim_sens_y) || body->gyro_aim_sens_y < 0.0f || body->gyro_aim_sens_y > 1.0f) {
-        body->gyro_aim_sens_y = 0.01f;
+        body->gyro_aim_sens_y = GYRO_AIM_SENS_DEFAULT;
         printf("[Config] gyro_aim_sens_y is invalid\n");
     }
     if (body->gyro_aim_smoothing > 100) {
-        body->gyro_aim_smoothing = 20;
+        body->gyro_aim_smoothing = GYRO_AIM_SMOOTHING_DEFAULT;
         printf("[Config] gyro_aim_smoothing is invalid\n");
     }
     if (body->gyro_aim_max_output == 0 || body->gyro_aim_max_output > 127) {
-        body->gyro_aim_max_output = 40;
+        body->gyro_aim_max_output = GYRO_AIM_MAX_OUTPUT_DEFAULT;
         printf("[Config] gyro_aim_max_output is invalid\n");
     }
     if (body->gyro_aim_invert_x > 1) {
-        body->gyro_aim_invert_x = 0;
+        body->gyro_aim_invert_x = GYRO_AIM_INVERT_DEFAULT;
         printf("[Config] gyro_aim_invert_x is invalid\n");
     }
     if (body->gyro_aim_invert_y > 1) {
-        body->gyro_aim_invert_y = 0;
+        body->gyro_aim_invert_y = GYRO_AIM_INVERT_DEFAULT;
         printf("[Config] gyro_aim_invert_y is invalid\n");
     }
     if (body_version_changed) {

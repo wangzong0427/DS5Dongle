@@ -89,12 +89,17 @@ void on_bt_data(CHANNEL_TYPE channel, uint8_t *data, uint16_t len) {
             set_headset(data[56] & 1);
         }
 
+        const auto &config = get_config();
+        const uint8_t *report_src = data + 3;
         uint8_t processed_report[63];
-        memcpy(processed_report, data + 3, sizeof(processed_report));
-        gyro_aim_process_report(processed_report, sizeof(processed_report));
+        if (config.gyro_aim_enabled) {
+            memcpy(processed_report, data + 3, sizeof(processed_report));
+            gyro_aim_process_report(processed_report, sizeof(processed_report));
+            report_src = processed_report;
+        }
 
-        if (get_config().polling_rate_mode != 2) {
-            memcpy(interrupt_in_data, processed_report, sizeof(processed_report));
+        if (config.polling_rate_mode != 2) {
+            memcpy(interrupt_in_data, report_src, sizeof(processed_report));
 #if ENABLE_BATT_LED
             battery_led_note_report();
 #endif
@@ -102,13 +107,13 @@ void on_bt_data(CHANNEL_TYPE channel, uint8_t *data, uint16_t len) {
         }
 
         // We add the critical section here to avoid any race conditions when writing to the interrupt_in_data buffer,
-        // which is shared between the main loop and this callback. 
-        // The critical section ensures that only one thread can access the buffer at a time, 
-        // preventing data corruption and ensuring thread safety.   
+        // which is shared between the main loop and this callback.
+        // The critical section ensures that only one thread can access the buffer at a time,
+        // preventing data corruption and ensuring thread safety.
         // We also set the report_dirty flag to true to indicate that new data is available
         //  and needs to be sent in the next interrupt report.
         critical_section_enter_blocking(&report_cs);
-        memcpy(interrupt_in_data, processed_report, sizeof(processed_report));
+        memcpy(interrupt_in_data, report_src, sizeof(processed_report));
         report_dirty = true;
         critical_section_exit(&report_cs);
 #if ENABLE_BATT_LED
